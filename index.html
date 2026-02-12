@@ -4,61 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Watch Alarm & Cal</title>
+    <title>特大アラーム</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
-        .card { width: 100%; max-width: 300px; box-sizing: border-box; }
-        h3 { text-align: center; color: #ff9500; margin: 10px 0; font-size: 16px; }
-        label { font-size: 11px; color: #aaa; margin-left: 5px; }
-        input, textarea, button { 
-            width: 100%; margin-bottom: 10px; padding: 12px; border: none; border-radius: 10px; 
-            font-size: 16px; background: #222; color: #fff; box-sizing: border-box;
+        /* 背景を黒にしてApple Watchに最適化 */
+        body { 
+            font-family: -apple-system, sans-serif; 
+            background: #000; 
+            color: #fff; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden;
         }
-        input[type="date"], input[type="time"] { font-size: 20px; font-weight: bold; text-align: center; background: #333; }
-        button { background: #ff9500; color: #000; font-weight: bold; padding: 15px; font-size: 18px; margin-top: 5px; }
-        button:active { background: #cc7600; }
-        .status { text-align: center; font-size: 10px; color: #666; }
+        .container { width: 95%; text-align: center; }
+
+        /* ラベルの文字を大きく */
+        label { font-size: 22px; color: #ff9500; font-weight: bold; display: block; margin-bottom: 10px; }
+
+        /* 入力欄の文字を特大に */
+        input[type="time"] { 
+            width: 100%; 
+            padding: 20px 0; 
+            border: none; 
+            border-radius: 15px; 
+            font-size: 60px; /* 特大サイズ */
+            font-weight: bold; 
+            text-align: center; 
+            background: #222; 
+            color: #fff; 
+            margin-bottom: 30px;
+            -webkit-appearance: none;
+        }
+
+        /* ボタンを巨大かつ押しやすく */
+        button { 
+            width: 100%; 
+            padding: 25px; 
+            border: none; 
+            border-radius: 20px; 
+            background: #ff9500; 
+            color: #000; 
+            font-size: 28px; /* 文字を大きく */
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(255, 149, 0, 0.3);
+        }
+
+        button:active { background: #cc7600; transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h3>⏰ Alarm & Cal</h3>
-        
-        <label>日付</label>
-        <input type="date" id="eventDate">
-        
-        <label>時刻</label>
-        <input type="time" id="eventTime">
-        
-        <textarea id="eventMemo" placeholder="予定メモ" rows="1"></textarea>
-        
-        <button id="submitBtn" onclick="runAll()">保存＆アラーム</button>
-        
-        <div id="status" class="status">Apple Watch連携対応</div>
+    <div class="container">
+        <label>アラーム時刻</label>
+        <input type="time" id="alarmTime">
+        <button onclick="setAlarm()">アラームをセット</button>
     </div>
 
     <script>
+        // ページ読み込み時に現在の時刻をセット
         window.onload = () => {
             const now = new Date();
-            document.getElementById('eventDate').value = now.toISOString().split('T')[0];
-            document.getElementById('eventTime').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('alarmTime').value = `${hh}:${mm}`;
         };
 
-        async function runAll() {
-            const date = document.getElementById('eventDate').value;
-            const time = document.getElementById('eventTime').value;
-            const memo = document.getElementById('eventMemo').value || "無題";
-            const gasUrl = "ここにあなたのGASのURLを貼り付け"; 
+        function setAlarm() {
+            const time = document.getElementById('alarmTime').value;
+            if (!time) return;
 
-            // 1. Googleカレンダーに送信
-            if(gasUrl.includes("http")) {
-                fetch(gasUrl, { method: "POST", mode: "no-cors", body: JSON.stringify({ date, time, memo }) });
-            }
-
-            // 2. ショートカット（アラーム）を起動
-            // Apple Watchでも shortcuts:// は有効です
-            window.location.href = "shortcuts://run-shortcut?name=MakeAlarm&input=" + encodeURIComponent(time);
+            // ショートカット「MakeAlarm」を起動
+            const url = "shortcuts://run-shortcut?name=MakeAlarm&input=" + encodeURIComponent(time);
+            window.location.href = url;
         }
     </script>
 </body>
