@@ -2,71 +2,64 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instant Alarm Memo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Watch Alarm & Cal</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input, textarea, button { width: 100%; margin-bottom: 15px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { background: #ff4757; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .alarm-list { margin-top: 20px; width: 100%; max-width: 400px; }
-        .alarm-item { background: #fff; padding: 10px; margin-bottom: 10px; border-left: 5px solid #ff4757; border-radius: 4px; display: flex; justify-content: space-between; }
+        body { font-family: -apple-system, sans-serif; background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
+        .card { width: 100%; max-width: 300px; box-sizing: border-box; }
+        h3 { text-align: center; color: #ff9500; margin: 10px 0; font-size: 16px; }
+        label { font-size: 11px; color: #aaa; margin-left: 5px; }
+        input, textarea, button { 
+            width: 100%; margin-bottom: 10px; padding: 12px; border: none; border-radius: 10px; 
+            font-size: 16px; background: #222; color: #fff; box-sizing: border-box;
+        }
+        input[type="date"], input[type="time"] { font-size: 20px; font-weight: bold; text-align: center; background: #333; }
+        button { background: #ff9500; color: #000; font-weight: bold; padding: 15px; font-size: 18px; margin-top: 5px; }
+        button:active { background: #cc7600; }
+        .status { text-align: center; font-size: 10px; color: #666; }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h2>⏰ アラーム予約</h2>
-        <input type="time" id="alarmTime">
-        <textarea id="alarmMemo" placeholder="その時、何をする？（メモ）"></textarea>
-        <button onclick="setAlarm()">アラームをセットする</button>
+        <h3>⏰ Alarm & Cal</h3>
+        
+        <label>日付</label>
+        <input type="date" id="eventDate">
+        
+        <label>時刻</label>
+        <input type="time" id="eventTime">
+        
+        <textarea id="eventMemo" placeholder="予定メモ" rows="1"></textarea>
+        
+        <button id="submitBtn" onclick="runAll()">保存＆アラーム</button>
+        
+        <div id="status" class="status">Apple Watch連携対応</div>
     </div>
-    <div id="list" class="alarm-list"></div>
 
     <script>
-        // 通知の許可を得る
-        if (Notification.permission !== 'granted') Notification.requestPermission();
+        window.onload = () => {
+            const now = new Date();
+            document.getElementById('eventDate').value = now.toISOString().split('T')[0];
+            document.getElementById('eventTime').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        };
 
-        let alarms = [];
+        async function runAll() {
+            const date = document.getElementById('eventDate').value;
+            const time = document.getElementById('eventTime').value;
+            const memo = document.getElementById('eventMemo').value || "無題";
+            const gasUrl = "ここにあなたのGASのURLを貼り付け"; 
 
-        function setAlarm() {
-            const time = document.getElementById('alarmTime').value;
-            const memo = document.getElementById('alarmMemo').value;
-            if (!time) return alert("時間を設定してください");
+            // 1. Googleカレンダーに送信
+            if(gasUrl.includes("http")) {
+                fetch(gasUrl, { method: "POST", mode: "no-cors", body: JSON.stringify({ date, time, memo }) });
+            }
 
-            const alarm = { time, memo, id: Date.now() };
-            alarms.push(alarm);
-            updateList();
-            
-            // 入力欄をクリア
-            document.getElementById('alarmMemo').value = "";
+            // 2. ショートカット（アラーム）を起動
+            // Apple Watchでも shortcuts:// は有効です
+            window.location.href = "shortcuts://run-shortcut?name=MakeAlarm&input=" + encodeURIComponent(time);
         }
-
-        function updateList() {
-            const listDiv = document.getElementById('list');
-            listDiv.innerHTML = alarms.map(a => `
-                <div class="alarm-item">
-                    <span><b>${a.time}</b>: ${a.memo}</span>
-                    <button onclick="removeAlarm(${a.id})" style="width:auto; padding:5px; margin:0; background:#ccc;">削除</button>
-                </div>
-            `).join('');
-        }
-
-        function removeAlarm(id) {
-            alarms = alarms.filter(a => a.id !== id);
-            updateList();
-        }
-
-        // 1秒ごとにチェック
-        setInterval(() => {
-            const now = new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
-            alarms.forEach((a, index) => {
-                if (a.time === now) {
-                    new Notification("時間です！", { body: a.memo });
-                    alert("【" + a.time + "】\n" + a.memo);
-                    removeAlarm(a.id);
-                }
-            });
-        }, 1000);
     </script>
 </body>
 </html>
