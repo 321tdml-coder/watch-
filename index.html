@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Alarm Memo</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input, textarea, button { width: 100%; margin-bottom: 15px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { background: #ff4757; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .alarm-list { margin-top: 20px; width: 100%; max-width: 400px; }
+        .alarm-item { background: #fff; padding: 10px; margin-bottom: 10px; border-left: 5px solid #ff4757; border-radius: 4px; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>⏰ アラーム予約</h2>
+        <input type="time" id="alarmTime">
+        <textarea id="alarmMemo" placeholder="その時、何をする？（メモ）"></textarea>
+        <button onclick="setAlarm()">アラームをセットする</button>
+    </div>
+    <div id="list" class="alarm-list"></div>
+
+    <script>
+        // 通知の許可を得る
+        if (Notification.permission !== 'granted') Notification.requestPermission();
+
+        let alarms = [];
+
+        function setAlarm() {
+            const time = document.getElementById('alarmTime').value;
+            const memo = document.getElementById('alarmMemo').value;
+            if (!time) return alert("時間を設定してください");
+
+            const alarm = { time, memo, id: Date.now() };
+            alarms.push(alarm);
+            updateList();
+            
+            // 入力欄をクリア
+            document.getElementById('alarmMemo').value = "";
+        }
+
+        function updateList() {
+            const listDiv = document.getElementById('list');
+            listDiv.innerHTML = alarms.map(a => `
+                <div class="alarm-item">
+                    <span><b>${a.time}</b>: ${a.memo}</span>
+                    <button onclick="removeAlarm(${a.id})" style="width:auto; padding:5px; margin:0; background:#ccc;">削除</button>
+                </div>
+            `).join('');
+        }
+
+        function removeAlarm(id) {
+            alarms = alarms.filter(a => a.id !== id);
+            updateList();
+        }
+
+        // 1秒ごとにチェック
+        setInterval(() => {
+            const now = new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
+            alarms.forEach((a, index) => {
+                if (a.time === now) {
+                    new Notification("時間です！", { body: a.memo });
+                    alert("【" + a.time + "】\n" + a.memo);
+                    removeAlarm(a.id);
+                }
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
